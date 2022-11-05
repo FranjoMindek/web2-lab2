@@ -1,8 +1,9 @@
 import Head from 'next/head'
-import { setCookie, getCookie, deleteCookie } from 'cookies-next'
+import { setCookie } from 'cookies-next'
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import PocketBase from 'pocketbase';
+import axios from 'axios';
 
 export default function Home() {
 
@@ -16,10 +17,10 @@ export default function Home() {
   const [loginPassword, setLoginPassword] = useState('');
   const [usernameInfo, setUsernameInfo] = useState('');
   const [passwordInfo, setPasswordInfo] = useState('');
+  const [registerInfo, setRegisterInfo] = useState('');
 
   const router = useRouter()
   const client = new PocketBase('http://127.0.0.1:8090');
-  const bcrypt = require('bcryptjs');
 
   useEffect( () => {
     const inputData = localStorage.getItem("safeInput");
@@ -45,19 +46,37 @@ export default function Home() {
     setSafeInput(false);
   }
 
-  async function createInsecureUser() {
-    const data = {username: registerUsername, password: registerPassword};
-    try {
-      const record = await client.records.create('insecure_user', data);
-      setRegisterUsername('');
-      setRegisterPassword('');
-      console.log("Created user: ", record);
-    } catch (error) {
-      console.log(error);
+  // async function createInsecureUser() {
+  //   const data = {username: registerUsername, password: registerPassword};
+  //   try {
+  //     const record = await client.records.create('insecure_user', data);
+  //     setRegisterUsername('');
+  //     setRegisterPassword('');
+  //     console.log("Created user: ", record);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
+
+  function createInsecureUser() {
+    const data = {
+      username: registerUsername,
+      password: registerPassword
     }
+    axios.post('api/insecure/register', data).then(
+      res => {
+        setRegisterUsername('');
+        setRegisterPassword('');
+        setRegisterInfo('');
+        alert("Profil je uspješno stvoren!");
+      },
+      res => {
+        setRegisterInfo(res.response.data.registerInfo);
+      }
+    );
   }
 
-  async function createSecureUser() {
+  function createSecureUser() {
     if (registerPassword.length < 12) {
       const textShake = [
         { transform: 'scale(1)' },
@@ -74,56 +93,130 @@ export default function Home() {
       condition!.animate(textShake, textTiming);
       return;
     }
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(registerPassword, salt);
-    const data = {username: registerUsername, hash};
-    try {
-      const record = await client.records.create('secure_user', data);
-      setRegisterUsername('');
-      setRegisterPassword('');
-      console.log("Created user: ", record);
-    } catch (error) {
-      console.error(error);
+    const data = {
+      username: registerUsername,
+      password: registerPassword
     }
+    axios.post('api/secure/register', data).then(
+      res => {
+        setRegisterUsername('');
+        setRegisterPassword('');
+        setRegisterInfo('');
+        alert("Profil je uspješno stvoren!");
+      },
+      res => {
+        setRegisterInfo(res.response.data.registerInfo);
+      }
+    );
   }
 
-  async function loginInsecureUser() {
-    const records = await client.records.getFullList('insecure_user', 200, {
-      sort: '-created',
-    });
-    const insecureUser = records.find(insecureUser => insecureUser.username == loginUsername);
-    if (insecureUser === undefined) {
-      setUsernameInfo('Nepostojano korisničko ime');
-      setPasswordInfo('');
-    }
-    else if (insecureUser.password !== loginPassword) {
-      setUsernameInfo('');
-      setPasswordInfo('Netočna loznika za korisničko ime');
-    } else {
-      setUsernameInfo('');
-      setPasswordInfo('');
-      setLoginUsername('');
-      setLoginPassword('');
-      alert("Uspješna prijava!");
-    }
+  // async function createSecureUser() {
+  //   if (registerPassword.length < 12) {
+  //     const textShake = [
+  //       { transform: 'scale(1)' },
+  //       { transform: 'scale(1.1)'},
+  //       { transform: 'scale(1)'},
+  //       { transform: 'scale(0.9)'},
+  //       { transform: 'scale(1)' }
+  //     ];
+  //     const textTiming = {
+  //       duration: 300,
+  //       iterations: 2,
+  //     };
+  //     const condition = document.getElementById("passCondition")
+  //     condition!.animate(textShake, textTiming);
+  //     return;
+  //   }
+    // const salt = bcrypt.genSaltSync(10);
+    // const hash = bcrypt.hashSync(registerPassword, salt);
+    // const data = {username: registerUsername, hash};
+    // try {
+    //   const record = await client.records.create('secure_user', data);
+    //   setRegisterUsername('');
+    //   setRegisterPassword('');
+    //   console.log("Created user: ", record);
+    // } catch (error) {
+    //   console.error(error);
+    // }
+  // }
+
+  // async function loginInsecureUser() {
+  //   const records = await client.records.getFullList('insecure_user', 200, {
+  //     sort: '-created',
+  //   });
+  //   const insecureUser = records.find(insecureUser => insecureUser.username == loginUsername);
+  //   if (insecureUser === undefined) {
+  //     setUsernameInfo('Nepostojano korisničko ime');
+  //     setPasswordInfo('');
+  //   }
+  //   else if (insecureUser.password !== loginPassword) {
+  //     setUsernameInfo('');
+  //     setPasswordInfo('Netočna loznika za korisničko ime');
+  //   } else {
+  //     setUsernameInfo('');
+  //     setPasswordInfo('');
+  //     setLoginUsername('');
+  //     setLoginPassword('');
+  //     alert("Uspješna prijava!");
+  //   }
+  // }
+
+  function loginInsecureUser() {
+    const data = {
+      username: loginUsername,
+      password: loginPassword
+    };
+    axios.post('api/insecure/login', data).then(
+      res => {
+        setUsernameInfo('');
+        setPasswordInfo('');
+        setLoginUsername('');
+        setLoginPassword('');
+        alert("Uspješna prijava!");
+      },
+      res => {
+        setUsernameInfo(res.response.data.usernameInfo);
+        setPasswordInfo(res.response.data.passwordInfo);
+      }
+    );
   }
 
-  async function loginSecureUser() {
-    const records = await client.records.getFullList('secure_user', 200, {
-      sort: '-created',
-    });
-    const secureUser = records.find(secureUser => bcrypt.compareSync(loginPassword, secureUser.hash));
-    if (secureUser === undefined) {
-      setUsernameInfo('Netočno korisničko ime ili loznika');
-      setPasswordInfo('');
-    } else {
-      setUsernameInfo('');
-      setPasswordInfo('');
-      setLoginUsername('');
-      setLoginPassword('');
-      alert("Uspješna prijava!");
-    }
+  function loginSecureUser() {
+    const data = {
+      username: loginUsername,
+      password: loginPassword
+    };
+    axios.post('api/secure/login', data).then(
+      res => {
+        setUsernameInfo('');
+        setPasswordInfo('');
+        setLoginUsername('');
+        setLoginPassword('');
+        alert("Uspješna prijava!");
+      },
+      res => {
+        setUsernameInfo('Netočno korisničko ime ili loznika');
+        setPasswordInfo('');
+      }
+    );
   }
+
+  // async function loginSecureUser() {
+  //   const records = await client.records.getFullList('secure_user', 200, {
+  //     sort: '-created',
+  //   });
+  //   const secureUser = records.find(secureUser => bcrypt.compareSync(loginPassword, secureUser.hash));
+  //   if (secureUser === undefined) {
+  //     setUsernameInfo('Netočno korisničko ime ili loznika');
+  //     setPasswordInfo('');
+  //   } else {
+  //     setUsernameInfo('');
+  //     setPasswordInfo('');
+  //     setLoginUsername('');
+  //     setLoginPassword('');
+  //     alert("Uspješna prijava!");
+  //   }
+  // }
 
   function toSecureLogin() {
     setSafeLogin(true);
@@ -136,6 +229,8 @@ export default function Home() {
     setUsernameInfo('');
     setPasswordInfo('');
   }
+
+  
 
   return (
     <div className=''>
@@ -170,6 +265,7 @@ export default function Home() {
               <ul className='flex px-2 mt-2'>
                 <li className='w-1/5'>Korisničko ime:</li>
                 <li className='w-2/5'><input className='w-full' type="text" value={registerUsername} onChange={(e) => setRegisterUsername(e.target.value)}></input></li>
+                <li className='w-2/5 pl-2'>{registerInfo}</li>
               </ul>
               <ul className='flex px-2 mt-2'>
                 <li className='w-1/5'>Lozinka:</li>
