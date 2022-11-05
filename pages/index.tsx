@@ -19,7 +19,6 @@ export default function Home() {
   const [registerInfo, setRegisterInfo] = useState('');
 
   const router = useRouter()
-  const client = new PocketBase('http://127.0.0.1:8090');
 
   useEffect( () => {
     const inputData = localStorage.getItem("safeInput");
