@@ -2,7 +2,6 @@ import Head from 'next/head'
 import { setCookie } from 'cookies-next'
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import PocketBase from 'pocketbase';
 import axios from 'axios';
 
 export default function Home() {
